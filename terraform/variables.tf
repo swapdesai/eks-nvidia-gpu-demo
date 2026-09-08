@@ -12,7 +12,7 @@ variable "region" {
 
 variable "eks_cluster_version" {
   description = "EKS Cluster version"
-  default     = "1.37"
+  default     = "1.36"
   type        = string
 }
 
@@ -21,6 +21,12 @@ variable "vpc_cidr" {
   description = "VPC CIDR. This should be a valid private (RFC 1918) CIDR range"
   default     = "10.0.0.0/16"
   type        = string
+}
+
+variable "endpoint_public_access_cidrs" {
+  description = "List of CIDR blocks which can access the Amazon EKS public API server endpoint"
+  type        = list(string)
+  default     = []
 }
 
 variable "tags" {
