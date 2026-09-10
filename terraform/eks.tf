@@ -28,7 +28,7 @@ module "eks" {
 
   # Public Mode Only Network Settings
   endpoint_public_access  = true
-  endpoint_private_access = false
+  endpoint_private_access = true
 
   # Restrict public access to the cluster API server
   endpoint_public_access_cidrs = var.endpoint_public_access_cidrs
