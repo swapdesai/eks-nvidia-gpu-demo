@@ -2,27 +2,35 @@ provider "aws" {
   region = var.region
 
   default_tags {
-    tags = var.tags
+    tags = {
+      PartOf    = local.name
+      ManagedBy = "terraform"
+    }
   }
 }
 
-################################################################################
-# Common data/locals
-################################################################################
+data "aws_eks_cluster_auth" "this" {
+  name = module.eks.cluster_name
+}
 
-# Only Availability Zones (no Local Zones)
-data "aws_availability_zones" "available" {
-  # Do not include local zones
-  filter {
-    name   = "opt-in-status"
-    values = ["opt-in-not-required"]
+provider "kubernetes" {
+  host                   = module.eks.cluster_endpoint
+  cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+  token                  = data.aws_eks_cluster_auth.this.token
+}
+
+provider "helm" {
+  kubernetes = {
+    host                   = module.eks.cluster_endpoint
+    cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+    token                  = data.aws_eks_cluster_auth.this.token
   }
 }
 
-locals {
-  # Number of AZs we wish to create
-  azs = slice(data.aws_availability_zones.available.names, 0, 3)
-
-  tags = merge(var.tags, {
-  })
+provider "kubectl" {
+  host                   = module.eks.cluster_endpoint
+  cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+  token                  = data.aws_eks_cluster_auth.this.token
+  load_config_file       = false
+  apply_retry_count      = 30
 }
