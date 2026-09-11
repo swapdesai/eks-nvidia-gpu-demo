@@ -52,3 +52,44 @@ module "vpc" {
     "karpenter.sh/discovery"          = var.name
   }
 }
+
+resource "aws_nat_gateway" "regional" {
+  vpc_id            = module.vpc.vpc_id
+  availability_mode = "regional"
+  tags              = { Name = "${local.name}-ngw" }
+
+  depends_on = [module.vpc]
+}
+
+resource "aws_route" "private_ngw" {
+  count                  = length(local.private_subnets_cidrs)
+  route_table_id         = module.vpc.private_route_table_ids[count.index]
+  destination_cidr_block = "0.0.0.0/0"
+  nat_gateway_id         = aws_nat_gateway.regional.id
+}
+
+resource "aws_security_group" "shared" {
+  name        = "${local.name}-shared"
+  description = "Intra-VPC shared SG; self-ingress + all egress."
+  vpc_id      = module.vpc.vpc_id
+
+  tags = {
+    Name                                  = "${local.name}-shared"
+    "karpenter.sh/discovery"              = local.name
+    "kubernetes.io/cluster/${local.name}" = "owned"
+  }
+}
+
+resource "aws_vpc_security_group_ingress_rule" "shared_self" {
+  description                  = "Self-ingress, all protocols"
+  security_group_id            = aws_security_group.shared.id
+  referenced_security_group_id = aws_security_group.shared.id
+  ip_protocol                  = "-1"
+}
+
+resource "aws_vpc_security_group_egress_rule" "shared_all" {
+  description       = "Allow all egress"
+  security_group_id = aws_security_group.shared.id
+  cidr_ipv4         = "0.0.0.0/0"
+  ip_protocol       = "-1"
+}

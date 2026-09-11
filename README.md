@@ -6,5 +6,5 @@ git clone git@github.com:swapdesai/eks-nvidia-gpu-demo.git
 cd terraform
 
 export MY_CIDR="$(curl -s https://checkip.amazonaws.com)/32"
-terraform apply -var "endpoint_public_access_cidrs=['${MY_CIDR}']"
+terraform apply -var "endpoint_public_access_cidrs=['${MY_CIDR}']" -var "my_cidr='${MY_CIDR}'"
 ```
