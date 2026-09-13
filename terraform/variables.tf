@@ -63,3 +63,49 @@ variable "tags" {
     "auto-delete" = "never"
   }
 }
+
+variable "nodepools" {
+  description = <<-EOT
+    GPU NodePool strategies to enable, keyed by folder name under nodepools/. Defaults to
+    {} (no GPU NodePools). Set `reservation` on a strategy to have Terraform create a
+    tagged On-Demand Capacity Reservation (ODCR) for it; the NodeClass selects it by the
+    nodepool=<key> tag. An ODCR bills immediately until destroyed.
+
+    spot-ondemand and reserved-spot-ondemand both manage the gpu-inf pool and are
+    mutually exclusive. To add a strategy: create nodepools/<name>/ and add <name> to the validation list.
+  EOT
+  type = map(object({
+    reservation = optional(object({
+      instance_type  = optional(string, "g6e.4xlarge")
+      instance_count = optional(number, 1)
+      az             = optional(string, "") # defaults to the first cluster AZ
+    }))
+  }))
+  default = {}
+
+  validation {
+    condition = alltrue([
+      for k in keys(var.nodepools) : contains([
+        "spot-ondemand",
+        "reserved-spot-ondemand",
+      ], k)
+    ])
+    error_message = "Each key must be an existing strategy folder under nodepools/."
+  }
+
+  validation {
+    condition = length(setintersection(keys(var.nodepools), [
+      "spot-ondemand",
+      "reserved-spot-ondemand",
+    ])) <= 1
+    error_message = "Enable at most one GPU inference strategy (spot-ondemand, reserved-spot-ondemand); each is a complete solution for the gpu-inf workload."
+  }
+
+  validation {
+    condition = alltrue([
+      for k, v in var.nodepools :
+      contains(["reserved-spot-ondemand"], k) ? v.reservation != null : true
+    ])
+    error_message = "reserved-spot-ondemand requires a `reservation` (its reserved nodes run on an ODCR)."
+  }
+}
