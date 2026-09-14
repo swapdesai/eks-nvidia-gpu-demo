@@ -39,3 +39,7 @@ spec:
 EOF
 ```
 
+### Add reserved capacity to the NodePool
+```bash
+terraform apply -var "endpoint_public_access_cidrs=['${MY_CIDR}']" -var "my_cidr='${MY_CIDR}'" -var "nodepools={\"reserved-spot-ondemand\"={reservation={}}}'"
+```
