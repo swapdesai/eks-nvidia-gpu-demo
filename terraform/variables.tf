@@ -76,7 +76,8 @@ variable "nodepools" {
   EOT
   type = map(object({
     reservation = optional(object({
-      instance_type  = optional(string, "g6e.4xlarge")
+      # instance_type  = optional(string, "g6e.4xlarge")
+      instance_type  = optional(string, "g6.4xlarge")
       instance_count = optional(number, 1)
       az             = optional(string, "") # defaults to the first cluster AZ
     }))
